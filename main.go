@@ -51,7 +51,7 @@ Daemon control:
   saptune daemon [ start | status | stop ]
 Tune system according to SAP and SUSE notes:
   saptune note [ list | verify ]
-  saptune note [ apply | simulate | verify | customise | create | revert | show ] NoteID
+  saptune note [ apply | simulate | verify | customise | create | revert | show | remove ] NoteID
 Tune system for all notes applicable to your SAP solution:
   saptune solution [ list | verify ]
   saptune solution [ apply | simulate | verify | revert ] SolutionName
@@ -608,6 +608,8 @@ func NoteAction(actionName, noteID string) {
 		NoteActionShow(noteID)
 	case "revert":
 		NoteActionRevert(os.Stdout, noteID, tuneApp)
+	case "remove":
+		NoteActionRemove(os.Stdout, noteID, tuneApp)
 	default:
 		PrintHelpAndExit(1)
 	}
@@ -833,6 +835,19 @@ func NoteActionShow(noteID string) {
 }
 
 // NoteActionRevert reverts all parameter settings of a Note back to the
+// state before 'apply'
+func NoteActionRevert(writer io.Writer, noteID string, tuneApp *app.App) {
+	if noteID == "" {
+		PrintHelpAndExit(1)
+	}
+	if err := tuneApp.RevertNote(noteID, true); err != nil {
+		errorExit("Failed to revert note %s: %v", noteID, err)
+	}
+	fmt.Fprintf(writer, "Parameters tuned by the note have been successfully reverted.\n")
+	fmt.Fprintf(writer, "Please note: the reverted note may still show up in list of enabled notes, if an enabled solution refers to it.\n")
+}
+
+// NoteActionRemove reverts all parameter settings of a Note and removes the note definitions
 // state before 'apply'
 func NoteActionRevert(writer io.Writer, noteID string, tuneApp *app.App) {
 	if noteID == "" {
